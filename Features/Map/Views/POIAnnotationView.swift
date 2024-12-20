@@ -3,6 +3,7 @@ import SwiftUI
 struct POIAnnotationView: View {
     let poi: POI
     @State private var showTitle = true
+    @State private var isPressed = false
     
     var body: some View {
         VStack(spacing: 0) {
@@ -19,15 +20,23 @@ struct POIAnnotationView: View {
                 .font(.system(size: 24))
                 .foregroundColor(.white)
                 .padding(8)
-                .background(Color.accentColor)
+                .background(isPressed ? Color.accentColor.opacity(0.7) : Color.accentColor)
                 .clipShape(Circle())
                 .shadow(radius: 2)
+                .scaleEffect(isPressed ? 0.9 : 1.0)
+                .animation(.easeInOut(duration: 0.1), value: isPressed)
         }
         .onTapGesture {
             withAnimation {
                 showTitle.toggle()
             }
         }
+        .onLongPressGesture(minimumDuration: .infinity, maximumDistance: .infinity,
+                           pressing: { pressing in
+            withAnimation(.easeInOut(duration: 0.1)) {
+                isPressed = pressing
+            }
+        }, perform: {})
     }
 }
 

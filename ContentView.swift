@@ -30,6 +30,14 @@ struct ContentView: View {
                 }
                 .tag(2)
         }
+        .accentColor(.blue)
+        .onAppear {
+            // Set the default appearance for all tab bars
+            let appearance = UITabBarAppearance()
+            appearance.configureWithDefaultBackground()
+            UITabBar.appearance().scrollEdgeAppearance = appearance
+            UITabBar.appearance().standardAppearance = appearance
+        }
     }
 }
 

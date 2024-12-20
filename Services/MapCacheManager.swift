@@ -69,7 +69,8 @@ class MapCacheManager: ObservableObject {
                 totalTiles += tiles.count
                 
                 for tile in tiles {
-                    let url = tileOverlay.url(forTilePath: tile)
+                    let tilePath = MKTileOverlayPath(x: tile.x, y: tile.y, z: zoom, contentScaleFactor: 1)
+                    let url = tileOverlay.url(forTilePath: tilePath)
                     let localURL = self.cacheDirectory
                         .appendingPathComponent("\(zoom)_\(tile.x)_\(tile.y).cache")
                     
@@ -91,7 +92,7 @@ class MapCacheManager: ObservableObject {
         }
     }
     
-    private func getTileCoordinates(for region: MKCoordinateRegion, zoomLevel: Int) -> [(x: Int, y: Int, z: Int)] {
+    private func getTileCoordinates(for region: MKCoordinateRegion, zoomLevel: Int) -> [(x: Int, y: Int)] {
         let minLat = region.center.latitude - region.span.latitudeDelta / 2
         let maxLat = region.center.latitude + region.span.latitudeDelta / 2
         let minLon = region.center.longitude - region.span.longitudeDelta / 2
@@ -102,11 +103,11 @@ class MapCacheManager: ObservableObject {
         let minY = Int(floor((1.0 - log(tan(maxLat * .pi / 180.0) + 1.0 / cos(maxLat * .pi / 180.0)) / .pi) / 2.0 * pow(2.0, Double(zoomLevel))))
         let maxY = Int(floor((1.0 - log(tan(minLat * .pi / 180.0) + 1.0 / cos(minLat * .pi / 180.0)) / .pi) / 2.0 * pow(2.0, Double(zoomLevel))))
         
-        var tiles: [(x: Int, y: Int, z: Int)] = []
+        var tiles: [(x: Int, y: Int)] = []
         
         for x in minX...maxX {
             for y in minY...maxY {
-                tiles.append((x: x, y: y, z: zoomLevel))
+                tiles.append((x: x, y: y))
             }
         }
         

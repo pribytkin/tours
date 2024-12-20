@@ -12,79 +12,83 @@ struct MapView: View {
     private let tours = Tour.sampleTours
     
     var body: some View {
-        ZStack {
-            Map(coordinateRegion: $locationManager.region,
-                showsUserLocation: true,
-                userTrackingMode: $userTrackingMode,
-                annotationItems: pois) { poi in
-                MapAnnotation(coordinate: poi.coordinate) {
-                    POIAnnotationView(poi: poi)
-                        .onTapGesture {
-                            selectedPOI = poi
+        NavigationView {
+            ZStack {
+                Map(coordinateRegion: $locationManager.region,
+                    showsUserLocation: true,
+                    userTrackingMode: $userTrackingMode,
+                    annotationItems: pois) { poi in
+                    MapAnnotation(coordinate: poi.coordinate) {
+                        POIAnnotationView(poi: poi)
+                            .onTapGesture {
+                                withAnimation {
+                                    selectedPOI = poi
+                                }
+                            }
+                    }
+                }
+                .overlay(
+                    ForEach(routeManager.routes.indices, id: \.self) { index in
+                        PolylineView(polyline: routeManager.routes[index].polyline)
+                    }
+                )
+                .edgesIgnoringSafeArea(.all)
+                
+                VStack {
+                    if routeManager.isCalculating {
+                        ProgressView("Calculating route...")
+                            .padding()
+                            .background(Color.white)
+                            .cornerRadius(8)
+                    }
+                    
+                    if let tour = routeManager.selectedTour {
+                        VStack {
+                            Text(tour.name)
+                                .font(.headline)
+                            Text(String(format: "%.1f km", routeManager.totalDistance / 1000))
+                                .font(.subheadline)
                         }
-                }
-            }
-            .overlay(
-                ForEach(routeManager.routes.indices, id: \.self) { index in
-                    MapPolyline(route: routeManager.routes[index])
-                        .stroke(Color.blue, lineWidth: 3)
-                }
-            )
-            .edgesIgnoringSafeArea(.all)
-            .sheet(item: $selectedPOI) { poi in
-                POIDetailView(poi: poi)
-            }
-            
-            VStack {
-                if routeManager.isCalculating {
-                    ProgressView("Calculating route...")
                         .padding()
                         .background(Color.white)
                         .cornerRadius(8)
-                }
-                
-                if let tour = routeManager.selectedTour {
-                    VStack {
-                        Text(tour.name)
-                            .font(.headline)
-                        Text(String(format: "%.1f km", routeManager.totalDistance / 1000))
-                            .font(.subheadline)
-                    }
-                    .padding()
-                    .background(Color.white)
-                    .cornerRadius(8)
-                    .shadow(radius: 2)
-                }
-                
-                Spacer()
-                
-                HStack {
-                    Button(action: {
-                        showTourList = true
-                    }) {
-                        Image(systemName: "map")
-                            .padding()
-                            .background(Color.white)
-                            .clipShape(Circle())
-                            .shadow(radius: 4)
+                        .shadow(radius: 2)
                     }
                     
                     Spacer()
                     
-                    Button(action: {
-                        withAnimation {
-                            userTrackingMode = .follow
+                    HStack {
+                        Button(action: {
+                            showTourList = true
+                        }) {
+                            Image(systemName: "map")
+                                .padding()
+                                .background(Color.white)
+                                .clipShape(Circle())
+                                .shadow(radius: 4)
                         }
-                    }) {
-                        Image(systemName: "location.fill")
-                            .padding()
-                            .background(Color.white)
-                            .clipShape(Circle())
-                            .shadow(radius: 4)
+                        
+                        Spacer()
+                        
+                        Button(action: {
+                            withAnimation {
+                                userTrackingMode = .follow
+                            }
+                        }) {
+                            Image(systemName: "location.fill")
+                                .padding()
+                                .background(Color.white)
+                                .clipShape(Circle())
+                                .shadow(radius: 4)
+                        }
                     }
+                    .padding()
                 }
-                .padding()
             }
+            .navigationBarHidden(true)
+        }
+        .sheet(item: $selectedPOI) { poi in
+            POIDetailView(poi: poi)
         }
         .sheet(isPresented: $showTourList) {
             TourListView(tours: tours) { tour in
@@ -95,14 +99,38 @@ struct MapView: View {
     }
 }
 
-struct MapPolyline: UIViewRepresentable {
-    let route: MKRoute
+struct PolylineView: UIViewRepresentable {
+    let polyline: MKPolyline
     
-    func makeUIView(context: Context) -> MKPolyline {
-        return route.polyline
+    func makeUIView(context: Context) -> UIView {
+        return UIView()
     }
     
-    func updateUIView(_ uiView: MKPolyline, context: Context) {}
+    func updateUIView(_ uiView: UIView, context: Context) {
+        // The actual rendering is handled by the MKMapView's overlay renderer
+    }
+    
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+    
+    class Coordinator: NSObject, MKMapViewDelegate {
+        var parent: PolylineView
+        
+        init(_ parent: PolylineView) {
+            self.parent = parent
+        }
+        
+        func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
+            if let polyline = overlay as? MKPolyline {
+                let renderer = MKPolylineRenderer(polyline: polyline)
+                renderer.strokeColor = .systemBlue
+                renderer.lineWidth = 3
+                return renderer
+            }
+            return MKOverlayRenderer(overlay: overlay)
+        }
+    }
 }
 
 struct TourListView: View {

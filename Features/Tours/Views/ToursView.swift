@@ -79,15 +79,15 @@ struct TourDetailView: View {
                     }
                 }
                 
-                if let distance = routeManager.totalDistance {
+                if routeManager.totalDistance > 0 {
                     Section("Route Details") {
                         HStack {
                             Image(systemName: "figure.walk")
-                            Text("Walking distance: \(String(format: "%.1f", distance / 1000)) km")
+                            Text("Walking distance: \(String(format: "%.1f", routeManager.totalDistance / 1000)) km")
                         }
                         HStack {
                             Image(systemName: "clock")
-                            Text("Estimated time: \(Int(distance / 1000 * 12)) min")
+                            Text("Estimated time: \(Int(routeManager.totalDistance / 1000 * 12)) min")
                         }
                     }
                 }
